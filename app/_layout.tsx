@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import "react-native-gesture-handler";
@@ -20,14 +20,17 @@ const queryClient = new QueryClient({
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const router = useRouter();
+  const segments = useSegments();
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+
   const [loaded, error] = useFonts({
     "Archivo-Regular": require("../assets/fonts/Archivo-Regular.ttf"),
     "Archivo-Medium": require("../assets/fonts/Archivo-Medium.ttf"),
     "Archivo-Bold": require("../assets/fonts/Archivo-Bold.ttf"),
     "Archivo-SemiBold": require("../assets/fonts/Archivo-SemiBold.ttf"),
   });
-
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem("hasSeenOnboarding").then((value) => {
@@ -36,14 +39,24 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (loaded || error) {
+    if ((loaded || error) && isFirstLaunch !== null) {
+      setIsNavigationReady(true);
       SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [loaded, error, isFirstLaunch]);
 
-  if (!loaded && !error) {
-    return null;
-  }
+  useEffect(() => {
+    if (!isNavigationReady) return;
+    const isOnboarding = segments[0] === "onboarding";
+
+    if (isFirstLaunch && !isOnboarding) {
+      router.replace("/onboarding");
+    } else if (!isFirstLaunch && isOnboarding) {
+      router.replace("/(tabs)");
+    }
+  }, [isFirstLaunch, isNavigationReady, segments]);
+
+  if (!isNavigationReady) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -54,7 +67,7 @@ export default function RootLayout() {
           presentation: "card",
         }}
       >
-        <Stack.Screen name="onboarding" redirect={true} />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="search"
