@@ -53,9 +53,9 @@ export default function PaywallScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Animated.Image
-        entering={FadeInRight.delay(200)}
-        exiting={FadeOutLeft}
+      <Image
+        // entering={FadeInRight.delay(200)}
+        // exiting={FadeOutLeft}
         source={require("@/assets/images/onboarding/onboaring_coins_2.png")}
         style={styles.illustration}
         resizeMode="contain"
