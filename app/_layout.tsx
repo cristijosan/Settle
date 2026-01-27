@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -72,40 +73,42 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: "slide_from_right",
-          presentation: "card",
-        }}
-      >
-        <Stack.Screen
-          name="search"
-          options={{
-            animation: "slide_from_right",
-            presentation: "card",
-            gestureEnabled: true,
-          }}
-        />
-        <Stack.Screen
-          name="company/[id]"
-          options={{
-            animation: "slide_from_right",
-            presentation: "card",
-            gestureEnabled: true,
-          }}
-        />
-        <Stack.Screen
-          name="claim-modal"
-          options={{
-            presentation: "formSheet",
-            sheetAllowedDetents: [0.45],
-            sheetGrabberVisible: true,
+    <ThemeProvider value={DefaultTheme}>
+      <QueryClientProvider client={queryClient}>
+        <Stack
+          screenOptions={{
             headerShown: false,
+            animation: "slide_from_right",
+            presentation: "card",
           }}
-        />
-      </Stack>
-    </QueryClientProvider>
+        >
+          <Stack.Screen
+            name="search"
+            options={{
+              animation: "slide_from_right",
+              presentation: "card",
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen
+            name="company/[id]"
+            options={{
+              animation: "slide_from_right",
+              presentation: "card",
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen
+            name="claim-modal"
+            options={{
+              presentation: "formSheet",
+              sheetAllowedDetents: [0.45],
+              sheetGrabberVisible: true,
+              headerShown: false,
+            }}
+          />
+        </Stack>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
