@@ -9,7 +9,9 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function ClaimModal() {
   const router = useRouter();
-  const { id, source } = useLocalSearchParams();
+  const { id, source, name } = useLocalSearchParams();
+  console.log(name)
+  console.log(source)
   const item = useLawsuitDetails(id as string);
 
   const handleConfirm = async () => {
@@ -47,10 +49,10 @@ export default function ClaimModal() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={[Typography.bold20, styles.subject]}>
-          Lantern by Labatron
+          {name}
         </Text>
         <Image
-          source={source ? source : require("@/assets/images/company.png")}
+          source={source ? { uri: source } : require("@/assets/images/company.png")}
           style={styles.logo}
         />
         <Text style={[Typography.bold16, styles.description]}>

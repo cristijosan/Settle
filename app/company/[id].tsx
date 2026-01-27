@@ -50,6 +50,7 @@ export default function CompanyDetailScreen() {
           pathname: "/claim-modal",
           params: {
             id: item.id,
+            name: item.company_name,
             source: item.company_logo_url,
           },
         });
