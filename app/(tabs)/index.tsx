@@ -5,9 +5,11 @@ import { Colors } from "@/constants/Colors";
 import { Typography } from "@/constants/Typography";
 import { useLawsuits } from '@/hooks/useLawsuits';
 import { CategoryType } from '@/services/CompanyService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Animated, { CurvedTransition, FadeInRight, Layout, SlideOutLeft } from 'react-native-reanimated';
 
@@ -15,11 +17,33 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<CategoryType>('All');
   const { data, isLoading, isFetching, error, refetch } = useLawsuits(activeCategory);
 
+  const [claimedIds, setClaimedIds] = useState<string[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadClaimedIds = async () => {
+        const savedClaims = await AsyncStorage.getItem('user_claims');
+        if (savedClaims) {
+          const parsed = JSON.parse(savedClaims);
+          setClaimedIds(parsed.map((item: any) => item.id.toString()));
+        } else {
+          setClaimedIds([]);
+        }
+      };
+      loadClaimedIds();
+    }, [])
+  );
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    return data.filter(item => !claimedIds.includes(item.id.toString()));
+  }, [data, claimedIds]);
+
   const categories: CategoryType[] = ['All', 'No Proof', 'Due Soon'];
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Sattelments" leftElement="help" rightElement="search" />
+      <ScreenHeader title="Settlements" leftElement="help" rightElement="search" />
       <View style={styles.content}>
         <Text style={[styles.sectionTitle, Typography.medium24]}>Your Top Matches</Text>
         <TouchableOpacity style={styles.showAllBtn}>
@@ -60,7 +84,7 @@ export default function Home() {
         </View>
         <Animated.FlatList
           onRefresh={refetch}
-          data={data}
+          data={filteredData}
           refreshing={isLoading}
           keyExtractor={(item) => item.unique_hash}
           itemLayoutAnimation={CurvedTransition}

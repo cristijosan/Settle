@@ -24,6 +24,7 @@ export default function RootLayout() {
   const segments = useSegments();
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+  const [isPremium, setIsPremium] = useState<boolean | null>(null);
 
   const [loaded, error] = useFonts({
     "Archivo-Regular": require("../assets/fonts/Archivo-Regular.ttf"),
@@ -33,8 +34,17 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    async function checkSubscription() {
+      const value = await AsyncStorage.getItem('isPremium');
+      setIsPremium(value === 'true');
+    }
+    checkSubscription();
+  }, []);
+
+  useEffect(() => {
     AsyncStorage.getItem("hasSeenOnboarding").then((value) => {
       setIsFirstLaunch(value === null);
+      setIsNavigationReady(true);
     });
   }, []);
 
@@ -46,17 +56,20 @@ export default function RootLayout() {
   }, [loaded, error, isFirstLaunch]);
 
   useEffect(() => {
-    if (!isNavigationReady) return;
+    if (!isNavigationReady || isFirstLaunch === null) return;
     const isOnboarding = segments[0] === "onboarding";
+    const isPaywall = segments[0] === "paywall"
 
     if (isFirstLaunch && !isOnboarding) {
-      router.replace("/onboarding");
-    } else if (!isFirstLaunch && isOnboarding) {
-      router.replace("/(tabs)");
-    }
-  }, [isFirstLaunch, isNavigationReady, segments]);
+    router.replace("/onboarding");
+  } else if (!isPremium && !isPaywall && !isOnboarding) {
+    router.replace("/paywall");
+  }
+  }, [isFirstLaunch, isNavigationReady, isPremium]);
 
-  if (!isNavigationReady) return null;
+  if (!isNavigationReady || isFirstLaunch === null) {
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -67,8 +80,6 @@ export default function RootLayout() {
           presentation: "card",
         }}
       >
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="search"
           options={{
