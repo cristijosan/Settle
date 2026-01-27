@@ -35,8 +35,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function checkSubscription() {
-      const value = await AsyncStorage.getItem('isPremium');
-      setIsPremium(value === 'true');
+      const value = await AsyncStorage.getItem("isPremium");
+      setIsPremium(value === "true");
     }
     checkSubscription();
   }, []);
@@ -58,13 +58,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (!isNavigationReady || isFirstLaunch === null) return;
     const isOnboarding = segments[0] === "onboarding";
-    const isPaywall = segments[0] === "paywall"
+    const isPaywall = segments[0] === "paywall";
 
     if (isFirstLaunch && !isOnboarding) {
-    router.replace("/onboarding");
-  } else if (!isPremium && !isPaywall && !isOnboarding) {
-    router.replace("/paywall");
-  }
+      router.replace("/onboarding");
+    } else if (!isPremium && !isPaywall && !isOnboarding) {
+      router.replace("/paywall");
+    }
   }, [isFirstLaunch, isNavigationReady, isPremium]);
 
   if (!isNavigationReady || isFirstLaunch === null) {

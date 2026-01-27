@@ -1,46 +1,62 @@
 import { Colors } from "@/constants/Colors";
 import { Typography } from "@/constants/Typography";
-import { Ionicons } from '@expo/vector-icons';
-import { GlassView } from "expo-glass-effect";
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  Dimensions,
+  Image,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 export default function PaywallScreen() {
   const router = useRouter();
-  const [selectedPlan, setSelectedPlan] = useState<'year' | 'month'>('year');
+  const [selectedPlan, setSelectedPlan] = useState<"year" | "month">("year");
 
   const handleBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
     if (router.canGoBack()) {
       router.back();
     } else {
-      // Если истории нет (например, зашли сразу после онбординга), 
-      // кидаем на главную
       router.replace("/(tabs)");
     }
   };
 
   const handleContinue = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
     // await AsyncStorage.setItem('isPremium', 'true');
-    router.replace('/(tabs)');
+    router.replace("/(tabs)");
   };
 
-  const FeatureItem = ({ icon, text }: { icon: string, text: string }) => (
+  const FeatureItem = ({ icon, text }: { icon: string; text: string }) => (
     <View style={styles.featureRow}>
       <Text style={styles.featureIcon}>{icon}</Text>
-      <Text style={[Typography.medium16, { color: Colors.black, fontSize: 14, }]}>{text}</Text>
+      <Text
+        style={[Typography.medium16, { color: Colors.black, fontSize: 14 }]}
+      >
+        {text}
+      </Text>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <Animated.Image
-        entering={FadeInRight.delay(200)} exiting={FadeOutLeft}
-        source={require('@/assets/images/onboarding/onboaring_coins_2.png')} 
+        entering={FadeInRight.delay(200)}
+        exiting={FadeOutLeft}
+        source={require("@/assets/images/onboarding/onboaring_coins_2.png")}
         style={styles.illustration}
         resizeMode="contain"
       />
@@ -50,8 +66,14 @@ export default function PaywallScreen() {
             <Ionicons name="chevron-back" size={20} color="black" />
           </Pressable>
 
-          <Animated.View entering={FadeInRight.delay(100)} exiting={FadeOutLeft} style={{marginTop: 10}}>
-            <Text style={[Typography.medium24, { fontSize: 32, lineHeight: 40 }]}>
+          <Animated.View
+            entering={FadeInRight.delay(100)}
+            exiting={FadeOutLeft}
+            style={{ marginTop: 10 }}
+          >
+            <Text
+              style={[Typography.medium24, { fontSize: 32, lineHeight: 40 }]}
+            >
               Claim Back
             </Text>
             <Text
@@ -65,79 +87,156 @@ export default function PaywallScreen() {
           </Animated.View>
         </View>
 
-        <View style={{flex:1, alignItems: 'center', justifyContent: 'center'}}>
-        {/* {!isLiquidGlassAvailable() ? (
-          <Animated.View entering={FadeInRight.delay(200)} exiting={FadeOutLeft} style={styles.glassCardWrapper}>
-            <BlurView 
-              intensity={Platform.OS === 'ios' ? 30 : 90} 
-              tint='extraLight'
-            >
-              <LinearGradient
-                colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0.1)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.blurBorder}
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          {!isLiquidGlassAvailable() ? (
+            <View style={styles.glassWrapper}>
+              <BlurView
+                intensity={Platform.OS === "ios" ? 30 : 90}
+                tint="extraLight"
               >
-                <Text style={[Typography.bold20, {textAlign: 'center'}]}>
-                  Did you know?
-                </Text>
-                <Text style={[Typography.medium16, {textAlign: 'center', marginTop: 16}]}>
-                  “In 2024 over <Text style={{color: Colors.blue}}>$42 Billion was paid</Text> out in class-action settlements”
-                </Text>
-              </LinearGradient>
-            </BlurView>
-          </Animated.View>
-        ) : ( */}
-          <GlassView style={styles.blurContainer} isInteractive>
-            <FeatureItem icon="🔍" text="Discover Eligible Claims" />
-            <FeatureItem icon="📝" text="File Claims in Minutes" />
-            <FeatureItem icon="🔒" text="Keep Data Private and Secure" />
-            <FeatureItem icon="⏰" text="Never Miss Deadlines" />
-            <FeatureItem icon="🚫" text="No SignUp Required" />
-          </GlassView>
-        {/* )} */}
-
+                <LinearGradient
+                  colors={["rgba(255,255,255,0.4)", "rgba(255,255,255,0.1)"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.blurContainer}
+                >
+                  <FeatureItem icon="🔍" text="Discover Eligible Claims" />
+                  <FeatureItem icon="📝" text="File Claims in Minutes" />
+                  <FeatureItem icon="🔒" text="Keep Data Private and Secure" />
+                  <FeatureItem icon="⏰" text="Never Miss Deadlines" />
+                  <FeatureItem icon="🚫" text="No SignUp Required" />
+                </LinearGradient>
+              </BlurView>
+            </View>
+          ) : (
+            <GlassView style={styles.blurContainer} isInteractive>
+              <FeatureItem icon="🔍" text="Discover Eligible Claims" />
+              <FeatureItem icon="📝" text="File Claims in Minutes" />
+              <FeatureItem icon="🔒" text="Keep Data Private and Secure" />
+              <FeatureItem icon="⏰" text="Never Miss Deadlines" />
+              <FeatureItem icon="🚫" text="No SignUp Required" />
+              <Image
+                source={require("@/assets/images/dollar-coin.png")}
+                style={styles.iconDollar}
+                resizeMode="contain"
+              />
+              <Image
+                source={require("@/assets/images/tick-sqare.png")}
+                style={styles.squareBox}
+                resizeMode="contain"
+              />
+            </GlassView>
+          )}
         </View>
 
         <View style={{}}>
-          <Text style={[Typography.semibold24, styles.planTitle]}>CHOOSE YOUR PLAN</Text>
+          <Text style={[Typography.semibold24, styles.planTitle]}>
+            CHOOSE YOUR PLAN
+          </Text>
 
-          <Pressable 
-            onPress={() => setSelectedPlan('year')}
-            style={[styles.planCard, selectedPlan === 'year' && styles.planCardActive]}
+          <Pressable
+            onPress={() => setSelectedPlan("year")}
+            style={[
+              styles.planCard,
+              selectedPlan === "year" && styles.planCardActive,
+            ]}
           >
             <View>
-              <Text style={[{color: selectedPlan === 'year' ? Colors.black : Colors.gray}, Typography.medium16]}>1 year <Text style={[{color: selectedPlan === 'year' ? Colors.blue : Colors.black}, Typography.bold16]}>$39.99</Text></Text>
-              <Text style={[Typography.medium16, {color: Colors.gray}]}>only <Text style={[{color: selectedPlan === 'year' ? Colors.blue : Colors.black}, Typography.bold16]}>$3.33</Text> per month</Text>
+              <Text
+                style={[
+                  {
+                    color: selectedPlan === "year" ? Colors.black : Colors.gray,
+                  },
+                  Typography.medium16,
+                ]}
+              >
+                1 year{" "}
+                <Text
+                  style={[
+                    {
+                      color:
+                        selectedPlan === "year" ? Colors.blue : Colors.black,
+                    },
+                    Typography.bold16,
+                  ]}
+                >
+                  $39.99
+                </Text>
+              </Text>
+              <Text style={[Typography.medium16, { color: Colors.gray }]}>
+                only{" "}
+                <Text
+                  style={[
+                    {
+                      color:
+                        selectedPlan === "year" ? Colors.blue : Colors.black,
+                    },
+                    Typography.bold16,
+                  ]}
+                >
+                  $3.33
+                </Text>{" "}
+                per month
+              </Text>
             </View>
             <View style={styles.bestOfferBadge}>
               <Text style={styles.bestOfferText}>BEST OFFER</Text>
             </View>
-            <Ionicons 
-              name={selectedPlan === 'year' ? "checkmark-circle" : "ellipse"} 
-              size={24} 
-              color={selectedPlan === 'year' ? Colors.blue : Colors.secondary} 
+            <Ionicons
+              name={selectedPlan === "year" ? "checkmark-circle" : "ellipse"}
+              size={24}
+              color={selectedPlan === "year" ? Colors.blue : Colors.secondary}
             />
           </Pressable>
 
-          <Pressable 
-            onPress={() => setSelectedPlan('month')}
-            style={[styles.planCard, selectedPlan === 'month' && styles.planCardActive, { marginTop: 12 }]}
+          <Pressable
+            onPress={() => setSelectedPlan("month")}
+            style={[
+              styles.planCard,
+              selectedPlan === "month" && styles.planCardActive,
+              { marginTop: 12 },
+            ]}
           >
-            <Text style={[{color: selectedPlan === 'month' ? Colors.black : Colors.gray}, Typography.medium16]}>1 month <Text style={[{color: selectedPlan === 'month' ? Colors.blue : Colors.black}, Typography.bold16]}>$17.99</Text></Text>
-            <Ionicons 
-              name={selectedPlan === 'month' ? "checkmark-circle" : "ellipse"} 
-              size={24} 
-              color={selectedPlan === 'month' ? Colors.blue : Colors.secondary} 
+            <Text
+              style={[
+                {
+                  color: selectedPlan === "month" ? Colors.black : Colors.gray,
+                },
+                Typography.medium16,
+              ]}
+            >
+              1 month{" "}
+              <Text
+                style={[
+                  {
+                    color:
+                      selectedPlan === "month" ? Colors.blue : Colors.black,
+                  },
+                  Typography.bold16,
+                ]}
+              >
+                $17.99
+              </Text>
+            </Text>
+            <Ionicons
+              name={selectedPlan === "month" ? "checkmark-circle" : "ellipse"}
+              size={24}
+              color={selectedPlan === "month" ? Colors.blue : Colors.secondary}
             />
           </Pressable>
 
           <Pressable onPress={handleContinue} style={styles.primaryButton}>
-            <Text style={[Typography.bold20, { color: 'white' }]}>Continue</Text>
+            <Text style={[Typography.bold20, { color: "white" }]}>
+              Continue
+            </Text>
           </Pressable>
 
-          <Text style={styles.footerNote}>🕒 Auto Renewals / Cancel Anytime</Text>
-          
+          <Text style={styles.footerNote}>
+            🕒 Auto Renewals / Cancel Anytime
+          </Text>
+
           <View style={styles.footerLinks}>
             <Text style={styles.footerLink}>Terms of Use</Text>
             <Text style={styles.footerLink}>Restore</Text>
@@ -155,21 +254,30 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     // paddingBottom: 40,
-    justifyContent: 'space-between'
+    justifyContent: "space-between",
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 24,
     backgroundColor: Colors.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  glassCardWrapperAnimated: {
-
-  },
-  glassCardWrapper: { 
-    
+  glassWrapper: {
+    borderRadius: 34,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 10, height: 20 },
+        shadowOpacity: 0.4,
+        shadowRadius: 50,
+      },
+      android: { elevation: 20 },
+    }),
+    borderColor: "rgba(255, 255, 255, 0.8)",
+    borderWidth: 1,
   },
   blurContainer: {
     borderRadius: 34,
@@ -178,54 +286,90 @@ const styles = StyleSheet.create({
   },
   illustration: {
     resizeMode: "cover",
-    position: 'absolute',
+    position: "absolute",
     width: width + 20,
     height: width + 20,
-    top: '50%',
-    left: '50%',
+    top: "50%",
+    left: "50%",
     marginLeft: -(width + 20) / 2,
     marginTop: -(width + 20) / 2,
     zIndex: -1,
     opacity: 0.4,
   },
-  featureRow: { 
-    flexDirection: 'row',
-    alignItems: 'center',
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
-    gap: 12
+    gap: 12,
   },
   featureIcon: { fontSize: 20 },
   planTitle: {
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 30,
     marginTop: 25,
     fontSize: 30,
     lineHeight: 32,
   },
   planCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 24,
     paddingVertical: 8,
     borderRadius: 120,
     borderWidth: 2,
     borderColor: Colors.secondary,
     minHeight: 60,
-    backgroundColor: Colors.white
+    backgroundColor: Colors.white,
   },
   planCardActive: { borderColor: Colors.blue },
-  bestOfferBadge: { position: 'absolute', top: -12, right: 50, backgroundColor: Colors.blue, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  bestOfferText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
+  bestOfferBadge: {
+    position: "absolute",
+    top: -12,
+    right: 50,
+    backgroundColor: Colors.blue,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  bestOfferText: { color: "white", fontSize: 10, fontWeight: "bold" },
   primaryButton: {
     backgroundColor: Colors.blue,
     minHeight: 60,
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 12
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 12,
   },
-  footerNote: { textAlign: 'center', marginTop: 15, color: Colors.gray, fontSize: 11 },
-  footerLinks: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15, paddingHorizontal: 10, },
-  footerLink: { color: "#5F6B99", fontSize: 11, textDecorationLine: 'underline' },
+  footerNote: {
+    textAlign: "center",
+    marginTop: 15,
+    color: Colors.gray,
+    fontSize: 11,
+  },
+  footerLinks: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 15,
+    paddingHorizontal: 10,
+  },
+  footerLink: {
+    color: "#5F6B99",
+    fontSize: 11,
+    textDecorationLine: "underline",
+  },
+  iconDollar: {
+    position: "absolute",
+    right: -50,
+    top: -50,
+    height: 120,
+    width: 120,
+  },
+  squareBox: {
+    position: "absolute",
+    left: -45,
+    bottom: -45,
+    height: 90,
+    width: 90,
+  },
 });

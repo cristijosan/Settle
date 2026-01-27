@@ -2,9 +2,10 @@ import { Colors } from "@/constants/Colors";
 import { Typography } from "@/constants/Typography";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import MaskedView from '@react-native-masked-view/masked-view';
-import { BlurView } from 'expo-blur';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import MaskedView from "@react-native-masked-view/masked-view";
+import { BlurView } from "expo-blur";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -16,9 +17,15 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
-import Animated, { FadeInRight, FadeOutLeft, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, {
+  FadeInRight,
+  FadeOutLeft,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
@@ -31,6 +38,7 @@ export default function Onboarding() {
   const progressWidth = useSharedValue(1 / totalSteps);
 
   const nextStep = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
     if (step < totalSteps - 1) {
       const next = step + 1;
       setStep(next);
@@ -39,6 +47,7 @@ export default function Onboarding() {
   };
 
   const prevStep = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
     if (step > 0) {
       const next = step - 1;
       setStep(next);
@@ -47,6 +56,7 @@ export default function Onboarding() {
   };
 
   const finishStep = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
     try {
       await AsyncStorage.setItem("hasSeenOnboarding", "true");
       router.replace("/paywall");
@@ -59,8 +69,20 @@ export default function Onboarding() {
     width: `${progressWidth.value * 100}%`,
   }));
 
-  const GradientText = ({ children, style }: { children: string, style?: any }) => (
-    <MaskedView maskElement={<Text style={[style, { backgroundColor: 'transparent' }]}>{children}</Text>}>
+  const GradientText = ({
+    children,
+    style,
+  }: {
+    children: string;
+    style?: any;
+  }) => (
+    <MaskedView
+      maskElement={
+        <Text style={[style, { backgroundColor: "transparent" }]}>
+          {children}
+        </Text>
+      }
+    >
       <LinearGradient
         colors={[Colors.white, Colors.blue, Colors.white]}
         locations={[0, 0.5, 1]}
@@ -87,7 +109,11 @@ export default function Onboarding() {
           Pay Me
         </Text>
       </Animated.View>
-      <Animated.View entering={FadeInRight.delay(200)} exiting={FadeOutLeft} style={styles.firstBlock}>
+      <Animated.View
+        entering={FadeInRight.delay(200)}
+        exiting={FadeOutLeft}
+        style={styles.firstBlock}
+      >
         <ImageBackground
           source={require("@/assets/images/rain-coins.png")}
           style={styles.payoutContainer}
@@ -132,52 +158,88 @@ export default function Onboarding() {
           </Text>
         </Pressable>
       </View>
-    </View >
+    </View>
   );
 
   const SecondStep = () => (
     <View style={styles.firstContent}>
       <Animated.Image
-        entering={FadeInRight.delay(100)} exiting={FadeOutLeft}
-        source={require('@/assets/images/onboarding/onboaring_coins_2.png')} 
+        entering={FadeInRight.delay(100)}
+        exiting={FadeOutLeft}
+        source={require("@/assets/images/onboarding/onboaring_coins_2.png")}
         style={styles.illustration}
         resizeMode="contain"
       />
-      <Animated.View entering={FadeInRight.delay(200)} exiting={FadeOutLeft} style={{ alignItems: 'center' }}>
-        <GradientText style={[Typography.bold20, {fontSize: 120, lineHeight: 120,}]}>
+      <Animated.View
+        entering={FadeInRight.delay(200)}
+        exiting={FadeOutLeft}
+        style={{ alignItems: "center" }}
+      >
+        <GradientText
+          style={[Typography.bold20, { fontSize: 120, lineHeight: 120 }]}
+        >
           $42
         </GradientText>
-        <Text style={[Typography.semibold24, {fontSize: 32, lineHeight: 32, color: Colors.blue, marginTop: 10,}]}>Billion</Text>
+        <Text
+          style={[
+            Typography.semibold24,
+            { fontSize: 32, lineHeight: 32, color: Colors.blue, marginTop: 10 },
+          ]}
+        >
+          Billion
+        </Text>
       </Animated.View>
       {!isLiquidGlassAvailable() ? (
-        <Animated.View entering={FadeInRight.delay(300)} exiting={FadeOutLeft} style={styles.glassWrapper}>
-          <BlurView 
-            intensity={Platform.OS === 'ios' ? 30 : 90} 
-            tint='extraLight'
+        <Animated.View
+          entering={FadeInRight.delay(300)}
+          exiting={FadeOutLeft}
+          style={styles.glassWrapper}
+        >
+          <BlurView
+            intensity={Platform.OS === "ios" ? 30 : 90}
+            tint="extraLight"
           >
             <LinearGradient
-              colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0.1)']}
+              colors={["rgba(255,255,255,0.4)", "rgba(255,255,255,0.1)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.blurBorder}
             >
-              <Text style={[Typography.bold20, {textAlign: 'center'}]}>
+              <Text style={[Typography.bold20, { textAlign: "center" }]}>
                 Did you know?
               </Text>
-              <Text style={[Typography.medium16, {textAlign: 'center', marginTop: 16}]}>
-                “In 2024 over <Text style={{color: Colors.blue}}>$42 Billion was paid</Text> out in class-action settlements”
+              <Text
+                style={[
+                  Typography.medium16,
+                  { textAlign: "center", marginTop: 16 },
+                ]}
+              >
+                “In 2024 over{" "}
+                <Text style={{ color: Colors.blue }}>$42 Billion was paid</Text>{" "}
+                out in class-action settlements”
               </Text>
             </LinearGradient>
           </BlurView>
         </Animated.View>
       ) : (
-        <Animated.View entering={FadeInRight.delay(300)} exiting={FadeOutLeft} style={styles.blurContainerAnimated}>
+        <Animated.View
+          entering={FadeInRight.delay(300)}
+          exiting={FadeOutLeft}
+          style={styles.blurContainerAnimated}
+        >
           <GlassView style={styles.blurContainer} isInteractive>
-            <Text style={[Typography.bold20, {textAlign: 'center'}]}>
+            <Text style={[Typography.bold20, { textAlign: "center" }]}>
               Did you know?
             </Text>
-            <Text style={[Typography.medium16, {textAlign: 'center', marginTop: 16}]}>
-              “In 2024 over <Text style={{color: Colors.blue}}>$42 Billion was paid</Text> out in class-action settlements”
+            <Text
+              style={[
+                Typography.medium16,
+                { textAlign: "center", marginTop: 16 },
+              ]}
+            >
+              “In 2024 over{" "}
+              <Text style={{ color: Colors.blue }}>$42 Billion was paid</Text>{" "}
+              out in class-action settlements”
             </Text>
           </GlassView>
         </Animated.View>
@@ -203,50 +265,88 @@ export default function Onboarding() {
     </View>
   );
 
-  const ThirdStepBlock = (step: number, text: string, source: ImageSourcePropType) => (
-    <Animated.View entering={FadeInRight.delay(200 * step)} exiting={FadeOutLeft}>
+  const ThirdStepBlock = (
+    step: number,
+    text: string,
+    source: ImageSourcePropType
+  ) => (
+    <Animated.View
+      entering={FadeInRight.delay(200 * step)}
+      exiting={FadeOutLeft}
+    >
       <ImageBackground
         source={source}
         style={styles.payoutBox}
         imageStyle={styles.payoutBoxImage}
       >
         <Entypo name="chevron-right" size={24} color={Colors.white} />
-        <Text style={[Typography.medium24, {color: Colors.white}]}>
+        <Text style={[Typography.medium24, { color: Colors.white }]}>
           {text}
         </Text>
         {!isLiquidGlassAvailable() ? (
           <View style={styles.glassBoxWrapper}>
-            <BlurView 
-              intensity={Platform.OS === 'ios' ? 40 : 90} 
-            >
+            <BlurView intensity={Platform.OS === "ios" ? 40 : 90}>
               <LinearGradient
-                colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0.1)']}
+                colors={["rgba(255,255,255,0.4)", "rgba(255,255,255,0.1)"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.blurBoxBorder}
               >
-                <Text style={[Typography.bold20, {fontSize: 24, color: 'rgba(255, 255, 255, 0.5)', lineHeight: 38}]}>
+                <Text
+                  style={[
+                    Typography.bold20,
+                    {
+                      fontSize: 24,
+                      color: "rgba(255, 255, 255, 0.5)",
+                      lineHeight: 38,
+                    },
+                  ]}
+                >
                   step
                 </Text>
-                <Text style={[Typography.bold20, {fontSize: 48, color: Colors.white, lineHeight: 48}]}>
+                <Text
+                  style={[
+                    Typography.bold20,
+                    { fontSize: 48, color: Colors.white, lineHeight: 48 },
+                  ]}
+                >
                   {step}
                 </Text>
               </LinearGradient>
             </BlurView>
           </View>
         ) : (
-          <GlassView style={styles.blurContainerBox} tintColor="rgba(0, 0, 0, 0.1)" glassEffectStyle="clear" isInteractive>
-            <Text style={[Typography.bold20, {fontSize: 24, color: 'rgba(255, 255, 255, 0.5)', lineHeight: 38}]}>
+          <GlassView
+            style={styles.blurContainerBox}
+            tintColor="rgba(0, 0, 0, 0.1)"
+            glassEffectStyle="clear"
+            isInteractive
+          >
+            <Text
+              style={[
+                Typography.bold20,
+                {
+                  fontSize: 24,
+                  color: "rgba(255, 255, 255, 0.5)",
+                  lineHeight: 38,
+                },
+              ]}
+            >
               step
             </Text>
-            <Text style={[Typography.bold20, {fontSize: 48, color: Colors.white, lineHeight: 48}]}>
+            <Text
+              style={[
+                Typography.bold20,
+                { fontSize: 48, color: Colors.white, lineHeight: 48 },
+              ]}
+            >
               {step}
             </Text>
           </GlassView>
         )}
       </ImageBackground>
     </Animated.View>
-  )
+  );
 
   const ThirdStep = () => (
     <View style={styles.firstContent}>
@@ -263,10 +363,22 @@ export default function Onboarding() {
           Your Share
         </Text>
       </Animated.View>
-      <View style={{flexDirection: "column", gap: 56,}}>
-        {ThirdStepBlock(1, 'See open Settlements', require("@/assets/images/onboarding/onboaring_box_1.png"))}
-        {ThirdStepBlock(2, 'Tap to', require("@/assets/images/onboarding/onboaring_box_2.png"))}
-        {ThirdStepBlock(3, 'Get your Money', require("@/assets/images/onboarding/onboaring_box_3.png"))}
+      <View style={{ flexDirection: "column", gap: 56 }}>
+        {ThirdStepBlock(
+          1,
+          "See open Settlements",
+          require("@/assets/images/onboarding/onboaring_box_1.png")
+        )}
+        {ThirdStepBlock(
+          2,
+          "Tap to",
+          require("@/assets/images/onboarding/onboaring_box_2.png")
+        )}
+        {ThirdStepBlock(
+          3,
+          "Get your Money",
+          require("@/assets/images/onboarding/onboaring_box_3.png")
+        )}
       </View>
       <View style={styles.buttonWrapper}>
         <Pressable
@@ -296,7 +408,7 @@ export default function Onboarding() {
           style={StyleSheet.absoluteFill}
           maskElement={
             <LinearGradient
-              colors={['rgba(0,0,0,1)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.1)']}
+              colors={["rgba(0,0,0,1)", "rgba(0,0,0,0.5)", "rgba(0,0,0,0.1)"]}
               locations={[0, 0.8, 1]}
               start={{ x: 1, y: 1 }}
               end={{ x: 1, y: 0 }}
@@ -304,16 +416,17 @@ export default function Onboarding() {
             />
           }
         >
-          <BlurView 
-            intensity={Platform.OS === 'ios' ? 50 : 80} 
-            tint="light" 
+          <BlurView
+            intensity={Platform.OS === "ios" ? 50 : 80}
+            tint="light"
             style={StyleSheet.absoluteFill}
           />
         </MaskedView>
-      </View>      
-      <Animated.Image 
-        entering={FadeInRight.delay(200)} exiting={FadeOutLeft}
-        source={require('@/assets/images/onboarding/onboaring_coins_2.png')} 
+      </View>
+      <Animated.Image
+        entering={FadeInRight.delay(200)}
+        exiting={FadeOutLeft}
+        source={require("@/assets/images/onboarding/onboaring_coins_2.png")}
         style={styles.illustrationFive}
         resizeMode="contain"
       />
@@ -333,11 +446,30 @@ export default function Onboarding() {
           Based on average payouts from class action settlements
         </Text>
       </Animated.View>
-      <Animated.View entering={FadeInRight.delay(300)} exiting={FadeOutLeft} style={{alignItems: 'center'}}>
-        <GradientText style={[Typography.bold20, {fontSize: 120, lineHeight: 120,}]}>
+      <Animated.View
+        entering={FadeInRight.delay(300)}
+        exiting={FadeOutLeft}
+        style={{ alignItems: "center" }}
+      >
+        <GradientText
+          style={[Typography.bold20, { fontSize: 120, lineHeight: 120 }]}
+        >
           $150
         </GradientText>
-        <Text style={[Typography.semibold24, {fontSize: 32, lineHeight: 32, color: Colors.blue, marginTop: 10, textAlign: 'center'}]}>Don’t let your money expire!</Text>
+        <Text
+          style={[
+            Typography.semibold24,
+            {
+              fontSize: 32,
+              lineHeight: 32,
+              color: Colors.blue,
+              marginTop: 10,
+              textAlign: "center",
+            },
+          ]}
+        >
+          Don’t let your money expire!
+        </Text>
       </Animated.View>
       <View style={styles.buttonWrapper}>
         <Pressable
@@ -358,15 +490,20 @@ export default function Onboarding() {
         </Pressable>
       </View>
     </View>
-  )
+  );
 
   const StepContent = () => {
     switch (step) {
-      case 0: return <FirstStep />;
-      case 1: return <SecondStep />;
-      case 2: return <ThirdStep />;
-      case 3: return <FiveStep />;
-      default: return <FirstStep />;
+      case 0:
+        return <FirstStep />;
+      case 1:
+        return <SecondStep />;
+      case 2:
+        return <ThirdStep />;
+      case 3:
+        return <FiveStep />;
+      default:
+        return <FirstStep />;
     }
   };
 
@@ -383,7 +520,7 @@ export default function Onboarding() {
         <View style={styles.progressTrack}>
           <Animated.View style={[styles.progressFill, animatedProgressStyle]} />
         </View>
-        <View style={{ width: 44 }} /> 
+        <View style={{ width: 44 }} />
       </View>
       <View style={{ flex: 1 }}>
         <StepContent key={`step-${step}`} />
@@ -447,31 +584,31 @@ const styles = StyleSheet.create({
   },
   illustration: {
     resizeMode: "cover",
-    position: 'absolute',
+    position: "absolute",
     width: width + 20,
     height: width + 20,
-    top: '50%',
-    left: '50%',
+    top: "50%",
+    left: "50%",
     marginLeft: -(width + 20) / 2,
     marginTop: -(width + 20) / 2,
-    zIndex: -1
+    zIndex: -1,
   },
   illustrationFive: {
-    position: 'absolute',
-    verticalAlign: 'middle',
+    position: "absolute",
+    verticalAlign: "middle",
     resizeMode: "cover",
     width: width + 40,
     height: width + 20,
-    left: '50%',
-    bottom: '-20%',
-    marginLeft: -(width) / 2
+    left: "50%",
+    bottom: "-20%",
+    marginLeft: -width / 2,
   },
   glassWrapper: {
     borderRadius: 34,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 10, height: 20 },
         shadowOpacity: 0.4,
         shadowRadius: 50,
@@ -480,26 +617,26 @@ const styles = StyleSheet.create({
     }),
     marginTop: "auto",
     marginBottom: 50,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    borderWidth: 1
+    borderColor: "rgba(255, 255, 255, 0.8)",
+    borderWidth: 1,
   },
   glassBoxWrapper: {
     borderRadius: 24,
-    overflow: 'hidden',
-    position: 'absolute',
+    overflow: "hidden",
+    position: "absolute",
     left: 25,
     top: -25,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 10, height: 20 },
         shadowOpacity: 0.4,
         shadowRadius: 50,
       },
       android: { elevation: 20 },
     }),
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    borderWidth: 1
+    borderColor: "rgba(255, 255, 255, 0.8)",
+    borderWidth: 1,
   },
   blurBorder: {
     borderRadius: 34,
@@ -510,12 +647,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
   },
   blurContainerAnimated: {
     marginTop: "auto",
-    marginBottom: 50
+    marginBottom: 50,
   },
   blurContainer: {
     borderRadius: 34,
@@ -523,12 +660,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   blurContainerBox: {
-    position: 'absolute',
+    position: "absolute",
     left: 25,
     top: -25,
     borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     gap: 5,
     paddingHorizontal: 20,
     paddingVertical: 6,
@@ -538,39 +675,39 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
     height: 96,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     gap: 9,
   },
   payoutBoxImage: {
     borderRadius: 24,
     resizeMode: "cover",
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
   },
   absoluteContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: "-20%",
     left: 0,
     right: 0,
-    height: height * 0.6, 
+    height: height * 0.6,
     zIndex: 5,
   },
   progressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     height: 60,
   },
-  headerLeft: { width: 44, alignItems: 'flex-start' },
+  headerLeft: { width: 44, alignItems: "flex-start" },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 24,
     backgroundColor: Colors.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   progressTrack: {
     flex: 1,
@@ -578,10 +715,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
     borderRadius: 3,
     marginHorizontal: 10,
-    overflow: 'hidden'
+    overflow: "hidden",
   },
   progressFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: Colors.blue,
     borderRadius: 3,
   },

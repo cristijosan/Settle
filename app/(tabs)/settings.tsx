@@ -6,32 +6,20 @@ import { StyleSheet, View } from "react-native";
 export default function Settings() {
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Settings"/>
+      <ScreenHeader title="Settings" />
       <View style={styles.scrollContent}>
-        <SettingsButton 
-          label="Instruction" 
+        <SettingsButton
+          label="Instruction"
           iconName="instruction"
-          isPrimary={true} 
+          isPrimary={true}
         />
-        <SettingsButton 
-          label="Privacy & Policy" 
-          iconName="privacy" 
-        />
-        <SettingsButton 
-          label="Terms of Use" 
-          iconName="terms" 
-        />
+        <SettingsButton label="Privacy & Policy" iconName="privacy" />
+        <SettingsButton label="Terms of Use" iconName="terms" />
 
         <View style={styles.separator} />
 
-        <SettingsButton 
-          label="Support" 
-          iconName="support"
-        />
-        <SettingsButton 
-          label="Rate Us" 
-          iconName="rate"
-        />
+        <SettingsButton label="Support" iconName="support" />
+        <SettingsButton label="Rate Us" iconName="rate" />
       </View>
     </View>
   );

@@ -1,28 +1,34 @@
-import ShowIcon from '@/assets/icons/show.svg';
-import { CompanyCard } from '@/components/CompanyCard';
+import ShowIcon from "@/assets/icons/show.svg";
+import { CompanyCard } from "@/components/CompanyCard";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Colors } from "@/constants/Colors";
 import { Typography } from "@/constants/Typography";
-import { useLawsuits } from '@/hooks/useLawsuits';
-import { CategoryType } from '@/services/CompanyService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useLawsuits } from "@/hooks/useLawsuits";
+import { CategoryType } from "@/services/CompanyService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Animated, { CurvedTransition, FadeInRight, Layout, SlideOutLeft } from 'react-native-reanimated';
+import Animated, {
+  CurvedTransition,
+  FadeInRight,
+  Layout,
+  SlideOutLeft,
+} from "react-native-reanimated";
 
 export default function Home() {
-  const [activeCategory, setActiveCategory] = useState<CategoryType>('All');
-  const { data, isLoading, isFetching, error, refetch } = useLawsuits(activeCategory);
+  const [activeCategory, setActiveCategory] = useState<CategoryType>("All");
+  const { data, isLoading, isFetching, error, refetch } =
+    useLawsuits(activeCategory);
 
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       const loadClaimedIds = async () => {
-        const savedClaims = await AsyncStorage.getItem('user_claims');
+        const savedClaims = await AsyncStorage.getItem("user_claims");
         if (savedClaims) {
           const parsed = JSON.parse(savedClaims);
           setClaimedIds(parsed.map((item: any) => item.id.toString()));
@@ -36,49 +42,53 @@ export default function Home() {
 
   const filteredData = useMemo(() => {
     if (!data) return [];
-    return data.filter(item => !claimedIds.includes(item.id.toString()));
+    return data.filter((item) => !claimedIds.includes(item.id.toString()));
   }, [data, claimedIds]);
 
-  const categories: CategoryType[] = ['All', 'No Proof', 'Due Soon'];
+  const categories: CategoryType[] = ["All", "No Proof", "Due Soon"];
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Settlements" leftElement="help" rightElement="search" />
+      <ScreenHeader
+        title="Settlements"
+        leftElement="help"
+        rightElement="search"
+      />
       <View style={styles.content}>
-        <Text style={[styles.sectionTitle, Typography.medium24]}>Your Top Matches</Text>
+        <Text style={[styles.sectionTitle, Typography.medium24]}>
+          Your Top Matches
+        </Text>
         <TouchableOpacity style={styles.showAllBtn}>
           <Text style={Typography.regular12}>Show all</Text>
-          <ShowIcon 
-            width={12} 
-            height={12}
-            color={Colors.black}
-          />
+          <ShowIcon width={12} height={12} color={Colors.black} />
         </TouchableOpacity>
         <View style={styles.filtersWrapper}>
           <View style={styles.filtersContainer}>
             {categories.map((cat) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={cat}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
-                  setActiveCategory(cat)
+                  setActiveCategory(cat);
                 }}
                 style={[
-                  styles.filterChip, 
-                  activeCategory === cat && styles.activeChip
+                  styles.filterChip,
+                  activeCategory === cat && styles.activeChip,
                 ]}
               >
-                <Text style={[
-                  styles.chipText, 
-                  activeCategory === cat && styles.activeChipText
-                ]}>
+                <Text
+                  style={[
+                    styles.chipText,
+                    activeCategory === cat && styles.activeChipText,
+                  ]}
+                >
                   {cat}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
           <LinearGradient
-            colors={['#FFFFFF', 'rgba(255, 255, 255, 0)']}
+            colors={["#FFFFFF", "rgba(255, 255, 255, 0)"]}
             style={styles.gradientPadding}
           />
         </View>
@@ -89,7 +99,7 @@ export default function Home() {
           keyExtractor={(item) => item.unique_hash}
           itemLayoutAnimation={CurvedTransition}
           renderItem={({ item, index }) => (
-            <Animated.View 
+            <Animated.View
               entering={FadeInRight.delay(index * 50)}
               exiting={SlideOutLeft.duration(300)}
               layout={Layout.springify()}
@@ -99,12 +109,14 @@ export default function Home() {
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
-          ListEmptyComponent={() => (
+          ListEmptyComponent={() =>
             !isLoading && (
-              <Text style={[Typography.semibold24, {textAlign: 'center'}]}>No matches found for this category.</Text>
+              <Text style={[Typography.semibold24, { textAlign: "center" }]}>
+                No matches found for this category.
+              </Text>
             )
-          )}
-          />
+          }
+        />
       </View>
     </View>
   );
@@ -122,14 +134,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   showAllBtn: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     backgroundColor: Colors.secondary,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 24,
     marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   filtersWrapper: {
@@ -137,13 +149,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   filtersContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 24,
     gap: 4,
     paddingBottom: 10,
   },
   gradientPadding: {
-    position: 'absolute',
+    position: "absolute",
     left: -20,
     right: -20,
     bottom: -30,
@@ -166,6 +178,6 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     marginTop: 10,
-    paddingBottom: 400
-  }
+    paddingBottom: 400,
+  },
 });
