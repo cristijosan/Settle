@@ -10,8 +10,6 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 export default function ClaimModal() {
   const router = useRouter();
   const { id, source, name } = useLocalSearchParams();
-  console.log(name)
-  console.log(source)
   const item = useLawsuitDetails(id as string);
 
   const handleConfirm = async () => {
