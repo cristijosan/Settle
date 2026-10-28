@@ -1,375 +1,420 @@
+import { IconField, IconTile, SCATTER_TILES } from "@/components/IconField";
 import { Colors } from "@/constants/Colors";
+import { Links } from "@/constants/Links";
 import { Typography } from "@/constants/Typography";
+import { periodUnit, SubscriptionService } from "@/services/SubscriptionService";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import * as WebBrowser from "expo-web-browser";
+import React, { ReactNode, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
-  Image,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
+// Plain emoji on purpose: the paywall should read light, not like the app's icon set.
+const FEATURES: { emoji: string; text: ReactNode }[] = [
+  { emoji: "✨", text: <>TAILOR <B>MORE CVs</B> WITH AI</> },
+  { emoji: "🎯", text: <>SEE YOUR <B>TOP MATCHES</B></> },
+  { emoji: "💬", text: <>SEARCH <B>WITH PROMPTS</B></> },
+  { emoji: "🧠", text: <><B>AI ANALYSIS</B> OF YOUR CV</> },
+];
+
+function B({ children }: { children: ReactNode }) {
+  return <Text style={styles.featureBold}>{children}</Text>;
+}
+
+type Plan = "year" | "month";
+
 export default function PaywallScreen() {
   const router = useRouter();
-  const [selectedPlan, setSelectedPlan] = useState<"year" | "month">("year");
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<Plan>("year");
+  const [busy, setBusy] = useState<"buy" | "restore" | null>(null);
 
-  const handleBack = () => {
+  const { data: products, isLoading, error, refetch } = useQuery({
+    queryKey: ["paywallProducts"],
+    queryFn: () => SubscriptionService.getProducts(),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const yearly = products?.find((p) => periodUnit(p) === "year");
+  const monthly = products?.find((p) => periodUnit(p) === "month");
+  const product = selected === "year" ? (yearly ?? monthly) : (monthly ?? yearly);
+
+  const close = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(tabs)");
-    }
+    if (router.canGoBack()) router.back();
+    else router.replace("/(tabs)");
+  };
+
+  const unlocked = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Flipping this starts the one-time AI analysis of the uploaded CV.
+    queryClient.setQueryData(["premium"], true);
+    close();
   };
 
   const handleContinue = async () => {
+    if (!product || busy) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
-    // await AsyncStorage.setItem('isPremium', 'true');
-    router.replace("/(tabs)");
+    setBusy("buy");
+    try {
+      if (await SubscriptionService.purchase(product)) unlocked();
+    } catch (e) {
+      Alert.alert("Purchase failed", e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      setBusy(null);
+    }
   };
 
-  const FeatureItem = ({ icon, text }: { icon: string; text: string }) => (
-    <View style={styles.featureRow}>
-      <Text style={styles.featureIcon}>{icon}</Text>
-      <Text
-        style={[Typography.medium16, { color: Colors.black, fontSize: 14 }]}
-      >
-        {text}
-      </Text>
+  const handleRestore = async () => {
+    if (busy) return;
+    setBusy("restore");
+    try {
+      if (await SubscriptionService.restore()) unlocked();
+      else Alert.alert("Nothing to restore", "No active subscription was found for this Apple ID.");
+    } catch (e) {
+      Alert.alert("Restore failed", e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const features = FEATURES.map((f) => (
+    <View key={f.emoji} style={styles.featureRow}>
+      <Text style={styles.featureEmoji}>{f.emoji}</Text>
+      <Text style={styles.featureText}>{f.text}</Text>
     </View>
-  );
+  ));
 
   return (
     <SafeAreaView style={styles.container}>
-      <Image
-        // entering={FadeInRight.delay(200)}
-        // exiting={FadeOutLeft}
-        source={require("@/assets/images/onboarding/onboaring_coins_2.png")}
-        style={styles.illustration}
-        resizeMode="contain"
-      />
-      <View style={styles.scrollContent}>
-        <View>
-          <Pressable onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={20} color="black" />
-          </Pressable>
+      <View style={styles.illustration} pointerEvents="none">
+        <IconField tiles={SCATTER_TILES} />
+      </View>
 
-          <Animated.View
-            entering={FadeInRight.delay(100)}
-            exiting={FadeOutLeft}
-            style={{ marginTop: 10 }}
-          >
-            <Text
-              style={[Typography.medium24, { fontSize: 32, lineHeight: 40 }]}
-            >
-              Claim Back
-            </Text>
-            <Text
-              style={[
-                Typography.bold20,
-                { fontSize: 32, lineHeight: 40, color: Colors.blue },
-              ]}
-            >
-              Your Settlements
-            </Text>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Animated.View entering={FadeIn.duration(300)}>
+            <Text style={[Typography.medium24, styles.titleTop]}>Land Your</Text>
+            <Text style={[Typography.bold20, styles.titleBottom]}>Dream Job</Text>
           </Animated.View>
+          <Pressable onPress={close} style={styles.closeButton} hitSlop={10} accessibilityLabel="Close">
+            <Ionicons name="close" size={20} color={Colors.gray} />
+          </Pressable>
         </View>
 
-        <View
-          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
-        >
-          {!isLiquidGlassAvailable() ? (
+        <Animated.View entering={FadeInDown.duration(300).delay(80)} style={styles.cardArea}>
+          {isLiquidGlassAvailable() ? (
+            <GlassView style={styles.featureCard} isInteractive>
+              {features}
+            </GlassView>
+          ) : (
             <View style={styles.glassWrapper}>
-              <BlurView
-                intensity={Platform.OS === "ios" ? 30 : 90}
-                tint="extraLight"
-              >
+              <BlurView intensity={Platform.OS === "ios" ? 30 : 90} tint="extraLight">
                 <LinearGradient
-                  colors={["rgba(255,255,255,0.4)", "rgba(255,255,255,0.1)"]}
+                  colors={["rgba(255,255,255,0.55)", "rgba(255,255,255,0.2)"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.blurContainer}
+                  style={styles.featureCard}
                 >
-                  <FeatureItem icon="🔍" text="Discover Eligible Claims" />
-                  <FeatureItem icon="📝" text="File Claims in Minutes" />
-                  <FeatureItem icon="🔒" text="Keep Data Private and Secure" />
-                  <FeatureItem icon="⏰" text="Never Miss Deadlines" />
-                  <FeatureItem icon="🚫" text="No SignUp Required" />
+                  {features}
                 </LinearGradient>
               </BlurView>
             </View>
-          ) : (
-            <GlassView style={styles.blurContainer} isInteractive>
-              <FeatureItem icon="🔍" text="Discover Eligible Claims" />
-              <FeatureItem icon="📝" text="File Claims in Minutes" />
-              <FeatureItem icon="🔒" text="Keep Data Private and Secure" />
-              <FeatureItem icon="⏰" text="Never Miss Deadlines" />
-              <FeatureItem icon="🚫" text="No SignUp Required" />
-              <Image
-                source={require("@/assets/images/dollar-coin.png")}
-                style={styles.iconDollar}
-                resizeMode="contain"
-              />
-              <Image
-                source={require("@/assets/images/tick-sqare.png")}
-                style={styles.squareBox}
-                resizeMode="contain"
-              />
-            </GlassView>
           )}
-        </View>
+          <IconTile icon="sparkles" size={76} tone="accent" rotate={12} style={styles.tileTopRight} />
+          <IconTile icon="checkmark" size={60} rotate={-12} style={styles.tileBottomLeft} />
+        </Animated.View>
 
-        <View style={{}}>
-          <Text style={[Typography.semibold24, styles.planTitle]}>
-            CHOOSE YOUR PLAN
+        <Animated.View entering={FadeInDown.duration(300).delay(160)}>
+          <Text style={styles.planTitle}>
+            GET <Text style={{ color: Colors.primary }}>PRO</Text> ACCESS
           </Text>
 
-          <Pressable
-            onPress={() => setSelectedPlan("year")}
-            style={[
-              styles.planCard,
-              selectedPlan === "year" && styles.planCardActive,
-            ]}
-          >
-            <View>
-              <Text
-                style={[
-                  {
-                    color: selectedPlan === "year" ? Colors.black : Colors.gray,
-                  },
-                  Typography.medium16,
-                ]}
-              >
-                1 year{" "}
-                <Text
-                  style={[
-                    {
-                      color:
-                        selectedPlan === "year" ? Colors.blue : Colors.black,
-                    },
-                    Typography.bold16,
-                  ]}
-                >
-                  $39.99
-                </Text>
+          {isLoading ? (
+            <ActivityIndicator color={Colors.primary} style={styles.plansLoading} />
+          ) : error || !product ? (
+            <Pressable onPress={() => refetch()} style={styles.plansError}>
+              <Text style={[Typography.regular14, { color: Colors.gray, textAlign: "center" }]}>
+                Couldn’t load the plans. Tap to try again.
               </Text>
-              <Text style={[Typography.medium16, { color: Colors.gray }]}>
-                only{" "}
-                <Text
-                  style={[
-                    {
-                      color:
-                        selectedPlan === "year" ? Colors.blue : Colors.black,
-                    },
-                    Typography.bold16,
-                  ]}
-                >
-                  $3.33
-                </Text>{" "}
-                per month
-              </Text>
+            </Pressable>
+          ) : (
+            <View style={{ gap: 12 }}>
+              {yearly && (
+                <PlanOption
+                  active={selected === "year"}
+                  onPress={() => setSelected("year")}
+                  badge="BEST OFFER"
+                  title="YEARLY ACCESS"
+                  price={`just ${yearly.price?.localizedString ?? ""} per year`}
+                />
+              )}
+              {monthly && (
+                <PlanOption
+                  active={selected === "month"}
+                  onPress={() => setSelected("month")}
+                  title="1 MONTH"
+                  price={monthly.price?.localizedString ?? ""}
+                  inline
+                />
+              )}
             </View>
-            <View style={styles.bestOfferBadge}>
-              <Text style={styles.bestOfferText}>BEST OFFER</Text>
-            </View>
-            <Ionicons
-              name={selectedPlan === "year" ? "checkmark-circle" : "ellipse"}
-              size={24}
-              color={selectedPlan === "year" ? Colors.blue : Colors.secondary}
-            />
-          </Pressable>
+          )}
 
           <Pressable
-            onPress={() => setSelectedPlan("month")}
-            style={[
-              styles.planCard,
-              selectedPlan === "month" && styles.planCardActive,
-              { marginTop: 12 },
+            onPress={handleContinue}
+            disabled={!product || !!busy}
+            style={({ pressed }) => [
+              styles.continueButton,
+              pressed && { backgroundColor: Colors.primaryPressed },
+              !product && { opacity: 0.5 },
             ]}
           >
-            <Text
-              style={[
-                {
-                  color: selectedPlan === "month" ? Colors.black : Colors.gray,
-                },
-                Typography.medium16,
-              ]}
-            >
-              1 month{" "}
-              <Text
-                style={[
-                  {
-                    color:
-                      selectedPlan === "month" ? Colors.blue : Colors.black,
-                  },
-                  Typography.bold16,
-                ]}
-              >
-                $17.99
-              </Text>
-            </Text>
-            <Ionicons
-              name={selectedPlan === "month" ? "checkmark-circle" : "ellipse"}
-              size={24}
-              color={selectedPlan === "month" ? Colors.blue : Colors.secondary}
-            />
+            {busy === "buy" ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Text style={[Typography.bold20, { color: Colors.white }]}>Continue</Text>
+            )}
           </Pressable>
 
-          <Pressable onPress={handleContinue} style={styles.primaryButton}>
-            <Text style={[Typography.bold20, { color: "white" }]}>
-              Continue
-            </Text>
-          </Pressable>
-
-          <Text style={styles.footerNote}>
-            🕒 Auto Renewals / Cancel Anytime
-          </Text>
+          <Text style={styles.footerNote}>🛡️ Auto Renewals / Cancel Anytime</Text>
 
           <View style={styles.footerLinks}>
-            <Text style={styles.footerLink}>Terms of Use</Text>
-            <Text style={styles.footerLink}>Restore</Text>
-            <Text style={styles.footerLink}>Privacy Policy</Text>
+            <Text style={styles.footerLink} onPress={() => WebBrowser.openBrowserAsync(Links.terms)}>
+              Terms of Use
+            </Text>
+            <Text style={styles.footerLink} onPress={handleRestore}>
+              {busy === "restore" ? "Restoring…" : "Restore"}
+            </Text>
+            <Text style={styles.footerLink} onPress={() => WebBrowser.openBrowserAsync(Links.privacy)}>
+              Privacy Policy
+            </Text>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
 }
 
+function PlanOption({
+  active,
+  onPress,
+  title,
+  price,
+  badge,
+  inline = false,
+}: {
+  active: boolean;
+  onPress: () => void;
+  title: string;
+  price: string;
+  badge?: string;
+  inline?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={() => {
+        Haptics.selectionAsync();
+        onPress();
+      }}
+      style={[styles.planCard, active && styles.planCardActive]}
+    >
+      <View style={inline ? styles.planInline : undefined}>
+        <Text style={[styles.planName, { color: active ? Colors.black : Colors.gray }]}>{title}</Text>
+        <Text style={styles.planPrice}>{price}</Text>
+      </View>
+      {active ? (
+        <Ionicons name="checkmark-circle" size={26} color={Colors.primary} />
+      ) : (
+        <View style={styles.radio} />
+      )}
+      {badge && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badge}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.white },
-  scrollContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-    // paddingBottom: 40,
-    justifyContent: "space-between",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 24,
-    backgroundColor: Colors.secondary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  glassWrapper: {
-    borderRadius: 34,
-    overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 10, height: 20 },
-        shadowOpacity: 0.4,
-        shadowRadius: 50,
-      },
-      android: { elevation: 20 },
-    }),
-    borderColor: "rgba(255, 255, 255, 0.8)",
-    borderWidth: 1,
-  },
-  blurContainer: {
-    borderRadius: 34,
-    paddingVertical: 24,
-    paddingHorizontal: 40,
-  },
   illustration: {
-    resizeMode: "cover",
     position: "absolute",
     width: width + 20,
     height: width + 20,
-    top: "50%",
-    left: "50%",
-    marginLeft: -(width + 20) / 2,
-    marginTop: -(width + 20) / 2,
-    zIndex: -1,
-    opacity: 0.4,
+    top: "22%",
+    left: -10,
+    opacity: 0.25,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: "space-between",
+    paddingBottom: 8,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginTop: 10,
+  },
+  titleTop: { fontSize: 32, lineHeight: 40, color: Colors.black },
+  titleBottom: { fontSize: 32, lineHeight: 40, color: Colors.primary },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardArea: {
+    marginHorizontal: 12,
+  },
+  glassWrapper: {
+    borderRadius: 30,
+    overflow: "hidden",
+    borderColor: "rgba(255, 255, 255, 0.8)",
+    borderWidth: 1,
+  },
+  featureCard: {
+    borderRadius: 30,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+    gap: 16,
   },
   featureRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
     gap: 12,
   },
-  featureIcon: { fontSize: 20 },
+  featureEmoji: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  featureText: {
+    ...Typography.regular14,
+    color: Colors.black,
+    flex: 1,
+  },
+  featureBold: {
+    fontFamily: "Archivo-Bold",
+  },
+  tileTopRight: {
+    position: "absolute",
+    right: -22,
+    top: -40,
+  },
+  tileBottomLeft: {
+    position: "absolute",
+    left: -18,
+    bottom: -32,
+  },
   planTitle: {
-    textAlign: "center",
-    marginBottom: 30,
-    marginTop: 25,
+    ...Typography.bold20,
     fontSize: 30,
-    lineHeight: 32,
+    lineHeight: 36,
+    color: Colors.black,
+    textAlign: "center",
+    marginBottom: 18,
+  },
+  plansLoading: {
+    height: 136,
+  },
+  plansError: {
+    height: 136,
+    justifyContent: "center",
   },
   planCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 120,
+    paddingHorizontal: 20,
+    minHeight: 62,
+    borderRadius: 31,
     borderWidth: 2,
     borderColor: Colors.secondary,
-    minHeight: 60,
     backgroundColor: Colors.white,
   },
-  planCardActive: { borderColor: Colors.blue },
-  bestOfferBadge: {
-    position: "absolute",
-    top: -12,
-    right: 50,
-    backgroundColor: Colors.blue,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+  planCardActive: { borderColor: Colors.primary },
+  planInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
-  bestOfferText: { color: "white", fontSize: 10, fontWeight: "bold" },
-  primaryButton: {
-    backgroundColor: Colors.blue,
-    minHeight: 60,
-    borderRadius: 30,
+  planName: {
+    ...Typography.medium16,
+    fontSize: 14,
+  },
+  planPrice: {
+    ...Typography.bold16,
+    fontSize: 14,
+    color: Colors.primary,
+  },
+  radio: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.secondary,
+  },
+  badge: {
+    position: "absolute",
+    top: -11,
+    right: 54,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  badgeText: {
+    ...Typography.bold16,
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.5,
+    color: Colors.white,
+  },
+  continueButton: {
+    backgroundColor: Colors.primary,
+    height: 58,
+    borderRadius: 29,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 16,
   },
   footerNote: {
+    ...Typography.regular12,
     textAlign: "center",
-    marginTop: 15,
+    marginTop: 12,
     color: Colors.gray,
-    fontSize: 11,
   },
   footerLinks: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 15,
+    marginTop: 10,
     paddingHorizontal: 10,
   },
   footerLink: {
-    color: "#5F6B99",
-    fontSize: 11,
+    ...Typography.regular12,
+    color: Colors.gray,
     textDecorationLine: "underline",
-  },
-  iconDollar: {
-    position: "absolute",
-    right: -50,
-    top: -50,
-    height: 120,
-    width: 120,
-  },
-  squareBox: {
-    position: "absolute",
-    left: -45,
-    bottom: -45,
-    height: 90,
-    width: 90,
   },
 });

@@ -1,34 +1,71 @@
+import { CvUploadPanel } from "@/components/CvUploadPanel";
+import {
+  CARD_TILES,
+  IconField,
+  IconTile,
+  SCATTER_TILES,
+} from "@/components/IconField";
 import { Colors } from "@/constants/Colors";
 import { Typography } from "@/constants/Typography";
+import { useResume } from "@/hooks/useResume";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import MaskedView from "@react-native-masked-view/masked-view";
+import MaskedViewBase from "@react-native-masked-view/masked-view";
 import { BlurView } from "expo-blur";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { ComponentProps, ComponentType, ReactElement, useState } from "react";
 import {
   Dimensions,
-  ImageBackground,
-  ImageSourcePropType,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
+  ViewProps,
 } from "react-native";
 import Animated, {
+  Easing,
   FadeInRight,
   FadeOutLeft,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width, height } = Dimensions.get("window");
+const MaskedView = MaskedViewBase as unknown as ComponentType<
+  ViewProps & { maskElement: ReactElement }
+>;
+
+const { width } = Dimensions.get("window");
+
+const GradientText = ({
+  children,
+  style,
+}: {
+  children: string;
+  style?: any;
+}) => (
+  <MaskedView
+    maskElement={
+      <Text style={[style, { backgroundColor: "transparent" }]}>
+        {children}
+      </Text>
+    }
+  >
+    <LinearGradient
+      colors={[Colors.white, Colors.primary, Colors.white]}
+      locations={[0, 0.5, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+    >
+      <Text style={[style, { opacity: 0 }]}>{children}</Text>
+    </LinearGradient>
+  </MaskedView>
+);
 
 export default function Onboarding() {
   const router = useRouter();
@@ -42,7 +79,10 @@ export default function Onboarding() {
     if (step < totalSteps - 1) {
       const next = step + 1;
       setStep(next);
-      progressWidth.value = withSpring((next + 1) / totalSteps);
+      progressWidth.value = withTiming((next + 1) / totalSteps, {
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+      });
     }
   };
 
@@ -51,7 +91,10 @@ export default function Onboarding() {
     if (step > 0) {
       const next = step - 1;
       setStep(next);
-      progressWidth.value = withSpring((next + 1) / totalSteps);
+      progressWidth.value = withTiming((next + 1) / totalSteps, {
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+      });
     }
   };
 
@@ -69,31 +112,6 @@ export default function Onboarding() {
     width: `${progressWidth.value * 100}%`,
   }));
 
-  const GradientText = ({
-    children,
-    style,
-  }: {
-    children: string;
-    style?: any;
-  }) => (
-    <MaskedView
-      maskElement={
-        <Text style={[style, { backgroundColor: "transparent" }]}>
-          {children}
-        </Text>
-      }
-    >
-      <LinearGradient
-        colors={[Colors.white, Colors.blue, Colors.white]}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
-        <Text style={[style, { opacity: 0 }]}>{children}</Text>
-      </LinearGradient>
-    </MaskedView>
-  );
-
   const FirstStep = () => (
     <View style={styles.firstContent}>
       <Animated.View entering={FadeInRight.delay(100)} exiting={FadeOutLeft}>
@@ -103,10 +121,10 @@ export default function Onboarding() {
         <Text
           style={[
             Typography.bold20,
-            { fontSize: 32, lineHeight: 40, color: Colors.blue },
+            { fontSize: 32, lineHeight: 40, color: Colors.primary },
           ]}
         >
-          Pay Me
+          CV Sender
         </Text>
       </Animated.View>
       <Animated.View
@@ -114,17 +132,24 @@ export default function Onboarding() {
         exiting={FadeOutLeft}
         style={styles.firstBlock}
       >
-        <ImageBackground
-          source={require("@/assets/images/rain-coins.png")}
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryDeep]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.payoutContainer}
-          imageStyle={styles.payoutImage}
         >
-          <View style={styles.blueOverlay} />
+          <IconField tiles={CARD_TILES} />
           <Text style={[Typography.medium24, { color: Colors.white }]}>
-            We will help you
+            We tailor your CV
           </Text>
-        </ImageBackground>
-        <Text style={styles.firstIcon}>💸</Text>
+        </LinearGradient>
+        <IconTile
+          icon="rocket"
+          size={104}
+          tone="accent"
+          rotate={12}
+          style={styles.firstIcon}
+        />
         <Text
           style={[
             Typography.medium24,
@@ -137,7 +162,7 @@ export default function Onboarding() {
             },
           ]}
         >
-          Get Money you Deserve from Settlements
+          Get a CV that fits every job you apply for
         </Text>
       </Animated.View>
       <View style={styles.buttonWrapper}>
@@ -163,13 +188,13 @@ export default function Onboarding() {
 
   const SecondStep = () => (
     <View style={styles.firstContent}>
-      <Animated.Image
+      <Animated.View
         entering={FadeInRight.delay(100)}
         exiting={FadeOutLeft}
-        source={require("@/assets/images/onboarding/onboaring_coins_2.png")}
         style={styles.illustration}
-        resizeMode="contain"
-      />
+      >
+        <IconField tiles={SCATTER_TILES} />
+      </Animated.View>
       <Animated.View
         entering={FadeInRight.delay(200)}
         exiting={FadeOutLeft}
@@ -178,15 +203,15 @@ export default function Onboarding() {
         <GradientText
           style={[Typography.bold20, { fontSize: 120, lineHeight: 120 }]}
         >
-          $42
+          200K+
         </GradientText>
         <Text
           style={[
             Typography.semibold24,
-            { fontSize: 32, lineHeight: 32, color: Colors.blue, marginTop: 10 },
+            { fontSize: 32, lineHeight: 32, color: Colors.primary, marginTop: 10 },
           ]}
         >
-          Billion
+          Live Jobs
         </Text>
       </Animated.View>
       {!isLiquidGlassAvailable() ? (
@@ -214,9 +239,9 @@ export default function Onboarding() {
                   { textAlign: "center", marginTop: 16 },
                 ]}
               >
-                “In 2024 over{" "}
-                <Text style={{ color: Colors.blue }}>$42 Billion was paid</Text>{" "}
-                out in class-action settlements”
+                “Recruiters spend about{" "}
+                <Text style={{ color: Colors.primary }}>7 seconds</Text> on a first
+                look. A tailored CV makes every second count”
               </Text>
             </LinearGradient>
           </BlurView>
@@ -237,9 +262,9 @@ export default function Onboarding() {
                 { textAlign: "center", marginTop: 16 },
               ]}
             >
-              “In 2024 over{" "}
-              <Text style={{ color: Colors.blue }}>$42 Billion was paid</Text>{" "}
-              out in class-action settlements”
+              “Recruiters spend about{" "}
+              <Text style={{ color: Colors.primary }}>7 seconds</Text> on a first
+              look. A tailored CV makes every second count”
             </Text>
           </GlassView>
         </Animated.View>
@@ -268,17 +293,19 @@ export default function Onboarding() {
   const ThirdStepBlock = (
     step: number,
     text: string,
-    source: ImageSourcePropType
+    icon: ComponentProps<typeof Ionicons>["name"]
   ) => (
     <Animated.View
       entering={FadeInRight.delay(200 * step)}
       exiting={FadeOutLeft}
     >
-      <ImageBackground
-        source={source}
+      <LinearGradient
+        colors={[Colors.primary, Colors.primaryDeep]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={styles.payoutBox}
-        imageStyle={styles.payoutBoxImage}
       >
+        <IconTile icon={icon} size={64} tone="light" rotate={-12} style={styles.boxTile} />
         <Entypo name="chevron-right" size={24} color={Colors.white} />
         <Text style={[Typography.medium24, { color: Colors.white }]}>
           {text}
@@ -344,7 +371,7 @@ export default function Onboarding() {
             </Text>
           </GlassView>
         )}
-      </ImageBackground>
+      </LinearGradient>
     </Animated.View>
   );
 
@@ -352,32 +379,32 @@ export default function Onboarding() {
     <View style={styles.firstContent}>
       <Animated.View entering={FadeInRight.delay(100)} exiting={FadeOutLeft}>
         <Text style={[Typography.medium24, { fontSize: 32, lineHeight: 40 }]}>
-          Claim
+          Apply
         </Text>
         <Text
           style={[
             Typography.bold20,
-            { fontSize: 32, lineHeight: 40, color: Colors.blue },
+            { fontSize: 32, lineHeight: 40, color: Colors.primary },
           ]}
         >
-          Your Share
+          Smarter
         </Text>
       </Animated.View>
       <View style={{ flexDirection: "column", gap: 56 }}>
         {ThirdStepBlock(
           1,
-          "See open Settlements",
-          require("@/assets/images/onboarding/onboaring_box_1.png")
+          "Pick a Job",
+          "briefcase"
         )}
         {ThirdStepBlock(
           2,
-          "Tap to",
-          require("@/assets/images/onboarding/onboaring_box_2.png")
+          "Tailor with AI",
+          "sparkles"
         )}
         {ThirdStepBlock(
           3,
-          "Get your Money",
-          require("@/assets/images/onboarding/onboaring_box_3.png")
+          "Apply in One Tap",
+          "paper-plane"
         )}
       </View>
       <View style={styles.buttonWrapper}>
@@ -401,109 +428,18 @@ export default function Onboarding() {
     </View>
   );
 
-  const FiveStep = () => (
-    <View style={styles.firstContent}>
-      <View style={styles.absoluteContainer} pointerEvents="none">
-        <MaskedView
-          style={StyleSheet.absoluteFill}
-          maskElement={
-            <LinearGradient
-              colors={["rgba(0,0,0,1)", "rgba(0,0,0,0.5)", "rgba(0,0,0,0.1)"]}
-              locations={[0, 0.8, 1]}
-              start={{ x: 1, y: 1 }}
-              end={{ x: 1, y: 0 }}
-              style={StyleSheet.absoluteFill}
-            />
-          }
-        >
-          <BlurView
-            intensity={Platform.OS === "ios" ? 50 : 80}
-            tint="light"
-            style={StyleSheet.absoluteFill}
-          />
-        </MaskedView>
-      </View>
-      <Animated.Image
-        entering={FadeInRight.delay(200)}
-        exiting={FadeOutLeft}
-        source={require("@/assets/images/onboarding/onboaring_coins_2.png")}
-        style={styles.illustrationFive}
-        resizeMode="contain"
-      />
-      <Animated.View entering={FadeInRight.delay(100)} exiting={FadeOutLeft}>
-        <Text style={[Typography.medium24, { fontSize: 32, lineHeight: 40 }]}>
-          Don’t loose
-        </Text>
-        <Text
-          style={[
-            Typography.bold20,
-            { fontSize: 32, lineHeight: 40, color: Colors.blue },
-          ]}
-        >
-          Your Share
-        </Text>
-        <Text style={[Typography.bold16, { marginTop: 10 }]}>
-          Based on average payouts from class action settlements
-        </Text>
-      </Animated.View>
-      <Animated.View
-        entering={FadeInRight.delay(300)}
-        exiting={FadeOutLeft}
-        style={{ alignItems: "center" }}
-      >
-        <GradientText
-          style={[Typography.bold20, { fontSize: 120, lineHeight: 120 }]}
-        >
-          $150
-        </GradientText>
-        <Text
-          style={[
-            Typography.semibold24,
-            {
-              fontSize: 32,
-              lineHeight: 32,
-              color: Colors.blue,
-              marginTop: 10,
-              textAlign: "center",
-            },
-          ]}
-        >
-          Don’t let your money expire!
-        </Text>
-      </Animated.View>
-      <View style={styles.buttonWrapper}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.primaryButton,
-            { opacity: pressed ? 0.9 : 1 },
-          ]}
-          onPress={finishStep}
-        >
-          <Text
-            style={[
-              Typography.bold20,
-              { color: Colors.white, textAlign: "center" },
-            ]}
-          >
-            Continue
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-
-  const StepContent = () => {
+  const renderStep = () => {
     switch (step) {
       case 0:
-        return <FirstStep />;
+        return FirstStep();
       case 1:
-        return <SecondStep />;
+        return SecondStep();
       case 2:
-        return <ThirdStep />;
+        return ThirdStep();
       case 3:
-        return <FiveStep />;
+        return <UploadStep onFinish={finishStep} />;
       default:
-        return <FirstStep />;
+        return FirstStep();
     }
   };
 
@@ -523,11 +459,67 @@ export default function Onboarding() {
         <View style={{ width: 44 }} />
       </View>
       <View style={{ flex: 1 }}>
-        <StepContent key={`step-${step}`} />
+        <View key={`step-${step}`} style={{ flex: 1 }}>
+          {renderStep()}
+        </View>
       </View>
     </SafeAreaView>
   );
 }
+
+// Lives outside Onboarding so that picking a file does not remount the step.
+const UploadStep = ({ onFinish }: { onFinish: () => void }) => {
+  const { data: resume } = useResume();
+
+  return (
+    <View style={styles.firstContent}>
+      <Animated.View entering={FadeInRight.delay(100)} exiting={FadeOutLeft}>
+        <Text style={[Typography.medium24, { fontSize: 32, lineHeight: 40 }]}>
+          Upload
+        </Text>
+        <Text
+          style={[
+            Typography.bold20,
+            { fontSize: 32, lineHeight: 40, color: Colors.primary },
+          ]}
+        >
+          Your CV
+        </Text>
+        <Text style={[Typography.bold16, { marginTop: 10 }]}>
+          We rewrite it for every job you pick. Your employers, titles and
+          dates are never changed.
+        </Text>
+      </Animated.View>
+      <Animated.View entering={FadeInRight.delay(200)} exiting={FadeOutLeft}>
+        <CvUploadPanel />
+      </Animated.View>
+      <View style={styles.buttonWrapper}>
+        <Pressable
+          disabled={!resume}
+          style={({ pressed }) => [
+            styles.primaryButton,
+            { opacity: !resume ? 0.4 : pressed ? 0.9 : 1 },
+          ]}
+          onPress={onFinish}
+        >
+          <Text
+            style={[
+              Typography.bold20,
+              { color: Colors.white, textAlign: "center" },
+            ]}
+          >
+            Continue
+          </Text>
+        </Pressable>
+        <Pressable onPress={onFinish} style={styles.skipButton}>
+          <Text style={[Typography.regular14, { color: Colors.gray }]}>
+            {resume ? " " : "Skip for now"}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -542,7 +534,7 @@ const styles = StyleSheet.create({
   },
   payoutContainer: {
     overflow: "hidden",
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.primary,
     paddingHorizontal: 12,
     paddingTop: 12,
     paddingBottom: 20,
@@ -550,21 +542,10 @@ const styles = StyleSheet.create({
     height: 196,
     justifyContent: "flex-end",
   },
-  payoutImage: {
-    resizeMode: "cover",
-    opacity: 0.5,
-  },
-  blueOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: Colors.blue,
-    opacity: 0.6,
-  },
   firstIcon: {
-    fontSize: 120,
-    lineHeight: 130,
     position: "absolute",
-    right: 30,
-    top: -50,
+    right: 36,
+    top: -44,
   },
   firstBlock: {
     paddingHorizontal: 20,
@@ -574,8 +555,12 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === "ios" ? 34 : 20,
     paddingTop: 10,
   },
+  skipButton: {
+    alignItems: "center",
+    paddingTop: 14,
+  },
   primaryButton: {
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.primary,
     height: 56,
     borderRadius: 24,
     justifyContent: "center",
@@ -583,7 +568,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   illustration: {
-    resizeMode: "cover",
     position: "absolute",
     width: width + 20,
     height: width + 20,
@@ -592,16 +576,6 @@ const styles = StyleSheet.create({
     marginLeft: -(width + 20) / 2,
     marginTop: -(width + 20) / 2,
     zIndex: -1,
-  },
-  illustrationFive: {
-    position: "absolute",
-    verticalAlign: "middle",
-    resizeMode: "cover",
-    width: width + 40,
-    height: width + 20,
-    left: "50%",
-    bottom: "-20%",
-    marginLeft: -width / 2,
   },
   glassWrapper: {
     borderRadius: 34,
@@ -671,6 +645,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   payoutBox: {
+    overflow: "hidden",
+    borderRadius: 24,
     paddingHorizontal: 12,
     paddingTop: 12,
     paddingBottom: 16,
@@ -679,20 +655,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: 9,
   },
-  payoutBoxImage: {
-    borderRadius: 24,
-    resizeMode: "cover",
+  boxTile: {
     position: "absolute",
-    top: 0,
-    left: 0,
-  },
-  absoluteContainer: {
-    position: "absolute",
-    bottom: "-20%",
-    left: 0,
-    right: 0,
-    height: height * 0.6,
-    zIndex: 5,
+    right: 120,
+    top: -14,
   },
   progressHeader: {
     flexDirection: "row",
@@ -719,7 +685,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: Colors.blue,
+    backgroundColor: Colors.primary,
     borderRadius: 3,
   },
 });

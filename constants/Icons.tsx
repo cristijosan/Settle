@@ -1,15 +1,15 @@
-import InstructionIcon from "@/assets/icons/help.svg";
-import PrivacyIcon from "@/assets/icons/privacy.svg";
-import RateIcon from "@/assets/icons/rate.svg";
-import SupportIcon from "@/assets/icons/support.svg";
-import TermsIcon from "@/assets/icons/terms.svg";
+import { Ionicons } from "@expo/vector-icons";
+import { ComponentProps } from "react";
+
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 export const Icons = {
-  instruction: InstructionIcon,
-  privacy: PrivacyIcon,
-  terms: TermsIcon,
-  support: SupportIcon,
-  rate: RateIcon,
-};
+  cv: "document-text-outline",
+  instruction: "compass-outline",
+  privacy: "shield-checkmark-outline",
+  terms: "reader-outline",
+  support: "chatbubble-ellipses-outline",
+  rate: "star-outline",
+} satisfies Record<string, IoniconName>;
 
 export type IconName = keyof typeof Icons;
